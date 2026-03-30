@@ -168,10 +168,17 @@ web_search: "{选题关键词} 数据 报告 2025 2026"
 ```
 读取: {baseDir}/references/writing-guide.md
 读取: {baseDir}/playbook.md（如果存在，逐条执行，优先于 writing-guide）
+读取: {baseDir}/writing-config.yaml（如果存在，作为写作参数）
 读取: {baseDir}/history.yaml（最近 3 篇的 dimensions 字段）
 ```
 
-**4a. 维度随机化**：从 writing-guide.md 第 7 层维度池随机激活 2-3 个维度，对比历史去重。
+**4a-0. 历史最佳参数参考**（有 history.yaml 且包含 composite_score 时执行）：
+
+读取 history.yaml 中有 `composite_score` 和 `writing_config_snapshot` 的文章，找到得分最低（最人类）的一篇。如果该篇得分比当前 writing-config.yaml 的默认参数对应的历史平均分更好，在写作时**参考**其参数组合（不是覆盖 writing-config.yaml，而是作为"上次这组参数效果好"的提示）。
+
+具体：如果历史最佳文章的某个参数值与当前 writing-config 不同，在写作时倾向使用历史最佳值。如果没有历史数据，跳过此步。
+
+**4a. 维度随机化**：从 writing-guide.md 维度池随机激活 2-3 个维度，对比历史去重。
 
 **4b. 加载写作人格**：
 
@@ -306,6 +313,16 @@ python3 {baseDir}/toolkit/cli.py preview {markdown} --theme {theme} --no-open -o
   writing_persona: "{人格名}"
   dimensions:
     - "{维度}: {选项}"
+  composite_score: {Step 5b-2 的 composite_score}  # 0=人类, 100=AI
+  writing_config_snapshot:  # 本次使用的关键参数（从 writing-config.yaml 提取）
+    sentence_variance: {值}
+    paragraph_rhythm: "{值}"
+    emotional_arc: "{值}"
+    word_temperature_bias: "{值}"
+    broken_sentence_rate: {值}
+    tangent_frequency: "{值}"
+    style_drift: {值}
+    negative_emotion_floor: {值}
   stats: null
 ```
 
