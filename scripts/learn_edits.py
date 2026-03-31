@@ -111,13 +111,34 @@ def fetch_wechat_draft() -> tuple[str, str, str]:
     title = latest.get("title", "")
 
     # Find the local draft file
+    # Priority: output_file field → title slug match → largest file
     date = latest.get("date", "")
     output_dir = SKILL_DIR / "output"
     draft_path = None
-    if date:
-        candidates = list(output_dir.glob(f"{date}-*.md"))
-        if candidates:
+
+    # First try: exact path from history
+    output_file = latest.get("output_file", "")
+    if output_file:
+        candidate = SKILL_DIR / output_file if not Path(output_file).is_absolute() else Path(output_file)
+        if candidate.exists():
+            draft_path = candidate
+
+    if not draft_path and date:
+        candidates = sorted(output_dir.glob(f"{date}-*.md"))
+        if len(candidates) == 1:
             draft_path = candidates[0]
+        elif len(candidates) > 1:
+            # Multiple files on same date — try to match by title keywords
+            title_lower = title.lower()
+            for c in candidates:
+                slug = c.stem.replace(date + "-", "").replace("-", " ")
+                # Check if slug words appear in title
+                if any(w in title_lower for w in slug.split() if len(w) > 1):
+                    draft_path = c
+                    break
+            if not draft_path:
+                # Fallback: use the largest file (likely the final version)
+                draft_path = max(candidates, key=lambda p: p.stat().st_size)
 
     if not draft_path or not draft_path.exists():
         raise FileNotFoundError(

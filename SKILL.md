@@ -429,6 +429,7 @@ python3 {skill_dir}/toolkit/cli.py preview {markdown} --theme {theme} --no-open 
   title: "{标题}"
   topic_source: "热点抓取"  # 或 "用户指定"
   topic_keywords: ["{词1}", "{词2}"]
+  output_file: "{output 文件路径}"  # e.g. output/2026-03-31-zhangxue-slow-accumulation.md
   framework: "{框架}"
   enhance_strategy: "{增强策略}"  # angle_discovery/density_boost/detail_anchoring/real_feel
   word_count: {字数}
