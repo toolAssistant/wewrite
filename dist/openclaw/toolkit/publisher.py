@@ -68,6 +68,50 @@ def create_draft(
     return DraftResult(media_id=data["media_id"])
 
 
+def get_draft(access_token: str, media_id: str) -> str:
+    """
+    Get draft content from WeChat by media_id.
+    API: POST https://api.weixin.qq.com/cgi-bin/draft/get
+    Returns the HTML content of the first article.
+    """
+    resp = requests.post(
+        "https://api.weixin.qq.com/cgi-bin/draft/get",
+        params={"access_token": access_token},
+        json={"media_id": media_id},
+    )
+    resp.encoding = "utf-8"
+    data = resp.json()
+
+    errcode = data.get("errcode", 0)
+    if errcode != 0:
+        errmsg = data.get("errmsg", "unknown error")
+        raise ValueError(f"WeChat get_draft error: errcode={errcode}, errmsg={errmsg}")
+
+    articles = data.get("news_item", [])
+    if not articles:
+        raise ValueError(f"WeChat get_draft: no articles in draft {media_id}")
+
+    return articles[0].get("content", "")
+
+
+def html_to_plaintext(html: str) -> str:
+    """Extract plain text from WeChat HTML, stripping all tags and styles."""
+    import re
+    # Remove script/style blocks
+    text = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", html, flags=re.DOTALL | re.IGNORECASE)
+    # Replace block-level tags with newlines
+    text = re.sub(r"<(br|p|div|section|h[1-6])[^>]*>", "\n", text, flags=re.IGNORECASE)
+    # Remove all remaining tags
+    text = re.sub(r"<[^>]+>", "", text)
+    # Decode HTML entities
+    import html as html_module
+    text = html_module.unescape(text)
+    # Collapse whitespace
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
 def create_image_post(
     access_token: str,
     title: str,
