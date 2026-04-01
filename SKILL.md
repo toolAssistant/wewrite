@@ -107,7 +107,7 @@ python3 -c "import markdown, bs4, cssutils, requests, yaml, pygments, PIL" 2>&1
 | `config.yaml` 存在 | 静默 | 引导创建，或设 `skip_publish = true` |
 | Python 依赖 | 静默 | 提供 `pip install -r requirements.txt` |
 | `wechat.appid` + `secret` | 静默 | 设 `skip_publish = true` |
-| `image.api_key` | 静默 | 设 `skip_image_gen = true` |
+| `image.api_key` 或 `image.providers` 至少一项有效 | 静默 | 设 `skip_image_gen = true` |
 | `references/exemplars/index.yaml` | 静默 | 提示："范文库为空。如果你有已发布的文章（markdown），可以说**'导入范文'**建立风格库，写出来的文章会更像你。没有也不影响使用。" |
 
 **1.2 版本检查**（静默通过或提醒）：
@@ -386,9 +386,11 @@ python3 {skill_dir}/scripts/humanness_score.py {article_path} --json --tier3 {ag
 - **交互模式**：展示封面，问用户"封面效果如何？"。用户 OK → 继续；不满意 → 调整提示词重新生成。
 - **全自动模式**：agent 自检——提示词中的实体是否在画面描述中可识别？如果提示词过于泛化（仅含"科技感""未来感"等抽象词，无具体实体），换一组提示词重试 1 次。
 
-**6.4 内文配图**：分析文章结构，生成 3-6 张内文配图提示词（按 visual-prompts.md）。风格、色调、画风沿用封面，保持视觉一致。批量调用 image_gen.py，替换 Markdown 占位符。
+**6.3b 风格锚定**：封面确认后，提取视觉锚点（色板 hex、风格关键词、画面调性），后续所有内文配图的提示词必须引用这组锚点，保证全文视觉一致。
 
-**降级**：生图失败 → 输出提示词 + 备选图库关键词，继续。
+**6.4 内文配图**：分析文章结构，为每个需要配图的段落选择图片类型（infographic/scene/flowchart/comparison/framework/timeline），使用对应的结构化提示词模板生成 3-6 张配图提示词（按 visual-prompts.md）。批量调用 image_gen.py，替换 Markdown 占位符。
+
+**降级**：image_gen.py 支持多 provider 自动 fallback（按 config.yaml 中 providers 列表顺序尝试）。全部失败 → 输出提示词 + 备选图库关键词，继续。
 
 ---
 
